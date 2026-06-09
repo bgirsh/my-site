@@ -1,65 +1,383 @@
-import Image from "next/image";
+export const dynamic = 'force-dynamic';
+import { wpQuery } from '@/lib/wordpress';
+import HomeClient from '@/components/HomeClient';
+import SectionHeader from '@/components/SectionHeader';
 
-export default function Home() {
+export default async function Home() {
+  const data = await wpQuery(`
+    query {
+      page(id: "home", idType: URI) {
+        title
+        flexiblePageBuilder {
+          pageSections {
+            __typename
+
+            ... on FlexiblePageBuilderPageSectionsHeroLayout {
+              title
+              highlight
+              description
+              primaryText
+              primaryUrl
+              secondaryText
+              secondaryUrl
+
+              chips {
+                chipText
+                isAccent
+              }
+
+              heroItems {
+                itemTitle
+                itemText
+              }
+
+              artCallouts {
+                topPosition
+                rightPosition
+                bottomPosition
+                leftPosition
+                direction
+                calloutTitle
+                calloutText
+              }
+
+              artCalloutSvg
+            }
+            ... on FlexiblePageBuilderPageSectionsStatsLayout {
+              eyebrow
+              title
+              highlight
+              description
+              stats {
+                statLabel
+                statValue
+                statSuffix
+                statHint
+              }
+            }
+            ... on FlexiblePageBuilderPageSectionsFeatureGridLayout {
+              eyebrow
+              title
+              highlight
+              description
+
+              features {
+                icon
+                number
+                title
+                description
+              }
+            }
+            ... on FlexiblePageBuilderPageSectionsSizesLayout {
+              eyebrow
+              title
+              highlight
+              description
+              note
+
+              sizes {
+                sizeCode
+                sizeMeta
+              }
+            }
+            ... on FlexiblePageBuilderPageSectionsCtaLayout {
+              eyebrow
+              title
+              highlight
+              description
+              primaryText
+              primaryUrl
+              secondaryText
+              secondaryUrl
+            }
+          }
+        }
+      }
+    }
+  `);
+
+  const sections = data?.page?.flexiblePageBuilder?.pageSections ?? [];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <HomeClient />
+      <main id="overview" className="mt-5">
+        {sections.map((section: any, index: number) => {
+          switch (section.__typename) {
+            case 'FlexiblePageBuilderPageSectionsHeroLayout':
+              return (
+                <section key={index} className="hero">
+                  <div className="hero__bg" aria-hidden="true"></div>
+                  <div className="container hero__inner mx-auto px-6">
+                    <div>
+                      {section.chips?.length > 0 && (
+                        <div className="hero__meta">
+                          {section.chips.map((chip: any, chipIndex: number) => (
+                            <span
+                              key={chipIndex}
+                              className={chip.isAccent ? 'chip chip--accent' : 'chip'}
+                            >
+                              {chip.isAccent && <span className="dot"></span>}
+                              {chip.chipText}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <h1 className="hero__title">
+                        {section.title}
+                        {section.highlight && (
+                          <>
+                            <br />
+                            <span className="slash">
+                              {section.highlight}
+                            </span>
+                          </>
+                        )}
+                      </h1>
+
+                      {section.description && (
+                        <p className="hero__lede">
+                          {section.description}
+                        </p>
+                      )}
+
+                      <div className="hero__cta">
+                        {section.primaryText && section.primaryUrl && (
+                          <a
+                            href={section.primaryUrl}
+                            className="btn btn--primary"
+                          >
+                            {section.primaryText}
+                            <svg className="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+                          </a>
+                        )}
+
+                        {section.secondaryText && section.secondaryUrl && (
+                          <a
+                            href={section.secondaryUrl}
+                            className="btn btn--ghost"
+                          >
+                            {section.secondaryText}
+                          </a>
+                        )}
+                      </div>
+                      <dl className="hero__strip">
+                        {section.heroItems?.map((item: any, itemIndex: number) => (
+                          <div key={itemIndex} className="hero__strip-item">
+                            <dt>{item.itemTitle}</dt>
+                            <dd>{item.itemText}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                    <div className="hero__art">
+                      <div className="hero__ticks" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      {section.artCallouts?.length > 0 &&
+                      section.artCallouts.map((callout: any, calloutIndex: number) => (
+                        <div
+                          key={calloutIndex}
+                          className="callout"
+                          style={{
+                            top: callout.topPosition,
+                            right: callout.rightPosition,
+                            bottom: callout.bottomPosition,
+                            left: callout.leftPosition,
+                            flexDirection: callout.direction,
+                          }}
+                        >
+                          <span>
+                            <strong>{callout.calloutTitle}</strong>
+                            <br />
+                            {callout.calloutText}
+                          </span>
+                          <span className="callout__line"></span>
+                        </div>
+                      ))}
+                      {section.artCalloutSvg && (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: section.artCalloutSvg,
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  
+                </section>
+              );
+            
+            case 'FlexiblePageBuilderPageSectionsStatsLayout':
+              return (
+                <section key={index} className="section scorecard" id="performance">
+                  <div className="container">
+                    <SectionHeader
+                      eyebrow={section.eyebrow}
+                      title={section.title}
+                      highlight={section.highlight}
+                      description={section.description}
+                    />
+
+                    {section.stats?.length > 0 && (
+                      <div className="grid grid--4" data-counters="">
+                        {section.stats.map((stat: any, statIndex: number) => (
+                          <article key={statIndex} className="stat reveal">
+                            {stat.statLabel && (
+                              <span className="stat__label">
+                                {stat.statLabel}
+                              </span>
+                            )}
+
+                            <div className="stat__value">
+                              <span data-counter data-from="0" data-to={stat.statValue} data-duration="1400">
+                                0
+                              </span>
+
+                              {stat.statSuffix && (
+                                <span className="stat__suffix">
+                                  {stat.statSuffix}
+                                </span>
+                              )}
+                            </div>
+
+                            {stat.statHint && (
+                              <p className="stat__hint">
+                                {stat.statHint}
+                              </p>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+
+            case 'FlexiblePageBuilderPageSectionsFeatureGridLayout':
+              return (
+                <section key={index} className="section" id="tech">
+                  <div className="container">
+                    <SectionHeader
+                      eyebrow={section.eyebrow}
+                      title={section.title}
+                      highlight={section.highlight}
+                      description={section.description}
+                    />
+
+                    {section.features?.length > 0 && (
+                      <div className="grid grid--2 tech__grid">
+                        {section.features.map((feature: any, featureIndex: number) => (
+                          <article key={featureIndex} className="feature reveal is-revealed">
+                            {feature.icon && (
+                              <div className="feature__icon" aria-hidden="true" dangerouslySetInnerHTML={{ __html: feature.icon }} />
+                            )}
+                            {feature.number && (
+                              <span className="feature__num">
+                                {(featureIndex + 1).toString().padStart(2, '0')}
+                                {' · '}
+                                {feature.number}
+                              </span>
+                            )}
+                            {feature.title && (
+                              <h3 className="feature__title">{feature.title}</h3>
+                            )}
+                            {feature.description && (
+                              <p className="feature__body">{feature.description}</p>
+                            )}
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+
+            case 'FlexiblePageBuilderPageSectionsSizesLayout':
+              return (
+                <section key={index} className="section" id="sizes">
+                  <div className="container">
+                    <div className="sizes__head mb-0">
+                      <SectionHeader
+                        eyebrow={section.eyebrow}
+                        title={section.title}
+                        highlight={section.highlight}
+                        description={section.description}
+                      />
+                      {section.note && (
+                        <p className="sizes__note">{section.note}</p>
+                      )}
+                    </div>
+
+                    {section.sizes?.length > 0 && (
+                      <div className="grid grid--sizes" role="list">
+                        {section.sizes.map((size: any, sizeIndex: number) => (
+                          <button key={sizeIndex} className="size" role="listitem">
+                            {size.sizeCode && (
+                              <span className="size__code">{size.sizeCode}</span>
+                            )}
+                            {size.sizeMeta && (
+                              <span className="size__meta">{size.sizeMeta}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+
+            case 'FlexiblePageBuilderPageSectionsCtaLayout':
+              return (
+                <section key={index} className="container" id="dealer">
+                  <div className="cta">
+                    <div className="cta__inner">
+                      {section.title && (
+                        <h2
+                          className="cta__title"
+                          dangerouslySetInnerHTML={{
+                            __html: section.highlight
+                              ? section.title.replace(
+                                  section.highlight,
+                                  `<em>${section.highlight}</em>`
+                                )
+                              : section.title,
+                          }}
+                        />
+                      )}
+                      <div className="cta__actions">
+                        {section.primaryText && section.primaryUrl && (
+                          <a
+                            href={section.primaryUrl}
+                            className="btn btn--primary"
+                          >
+                            {section.primaryText}
+                            <svg className="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+                          </a>
+                        )}
+                        {section.secondaryText && section.secondaryUrl && (
+                          <a
+                            href={section.secondaryUrl}
+                            className="btn btn--ghost"
+                          >
+                            {section.secondaryText}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+              
+            default:
+              return null;
+          }
+        })}
       </main>
-    </div>
+    </>
   );
 }
