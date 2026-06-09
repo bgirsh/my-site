@@ -101,7 +101,7 @@ export default async function Home() {
   return (
     <>
       <HomeClient />
-      <main id="overview" className="mt-10">
+      <main id="overview" className="mt-5">
         {sections.map((section: any, index: number) => {
           switch (section.__typename) {
             case 'FlexiblePageBuilderPageSectionsHeroLayout':
